@@ -19,7 +19,7 @@ Route::middleware('auth')->group(function () {
 
 Route::get('/', function () {
     return view('welcome');
-});
+})->name('dashboard');
 Route::get('/api', function () {
     return view('api');
 })->name('api');
