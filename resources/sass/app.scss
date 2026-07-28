@@ -1,0 +1,7 @@
+@import '@coreui/coreui/scss/coreui';
+@import '@coreui/icons/css/free.min.css';
+
+.wrapper {
+    margin-inline-start: var(--cui-sidebar-occupy-start, 0);
+    transition: margin-inline-start .15s;
+}
