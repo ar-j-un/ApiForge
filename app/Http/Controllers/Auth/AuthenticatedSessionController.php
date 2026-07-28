@@ -25,11 +25,18 @@ class AuthenticatedSessionController extends Controller
 
     public function store(LoginRequest $request): RedirectResponse
     {
-        $request->authenticate();
+        if (Auth::attempt($request->only('email', 'password'))) {
 
         $request->session()->regenerate();
 
-        return redirect()->route('dashboard');
+        return redirect()->route('dashboard')->with('success', 'Welcome back! You have successfully signed in.');
+
+        };
+        
+        return back()->withErrors([
+            'email' => 'The provided credentials do not match our records.',
+        ])->onlyInput('email');
+        
     }
 
     public function show(User $user)
