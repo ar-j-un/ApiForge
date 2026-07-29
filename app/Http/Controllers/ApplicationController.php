@@ -4,16 +4,29 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreApplicationRequest;
 use App\Models\Application;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Yajra\DataTables\Facades\DataTables;
 
 class ApplicationController extends Controller
 {
 
-    public function index()
+    public function index(Request $request): View|JsonResponse
     {
-        //
+        if ($request->ajax()) {
+            $applications = auth()->user()->applications()->select([
+                'id', 'name', 'address', 'port', 'created_at',
+            ]);
+
+            return DataTables::of($applications)
+                ->editColumn('created_at', fn (Application $application) => $application->created_at->format('d M Y, h:i A'))
+                ->toJson();
+        }
+
+        return view('applications.index');
+
     }
 
     public function create(): View
@@ -23,7 +36,7 @@ class ApplicationController extends Controller
 
     public function store(StoreApplicationRequest $request): RedirectResponse
     {
-        $request->user()->applications()->create($request->validated());
+        auth()->user()->applications()->create($request->validated());
 
         return redirect()
             ->route('applications.index')
