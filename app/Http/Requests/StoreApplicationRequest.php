@@ -37,7 +37,7 @@ class StoreApplicationRequest extends FormRequest
             'name.string' => 'Name should be a string',
             'name.max' => 'Maximum 255 characters',
             'address.required' => 'Address is required',
-            'address.ip' => 'Should be an ip',
+            'address.ip' => 'Address should be a valid ip address',
             'port.required' => 'Port is required',
             'port.integer' => 'Port should be an integer',
             'port.between' => 'Port should be between 1 and 65535',
