@@ -76,6 +76,47 @@
                 @enderror
             </div>
 
+            <div class="mb-3">
+                <label for="forwarding_address" class="form-label">Forwarding Address</label>
+                <input
+                    type="text"
+                    name="forwarding_address"
+                    id="forwarding_address"
+                    value="{{ old('forwarding_address') }}"
+                    class="form-control @error('forwarding_address') is-invalid @enderror"
+                    placeholder="e.g. 10.0.0.5"
+                    pattern="^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$"
+                    required
+                >
+                <div class="invalid-feedback">
+                    Enter a valid IPv4 address (e.g. 10.0.0.5).
+                </div>
+                @error('forwarding_address')
+                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                @enderror
+            </div>
+
+            <div class="mb-4">
+                <label for="domain" class="form-label">Domain</label>
+                <input
+                    type="text"
+                    name="domain"
+                    id="domain"
+                    value="{{ old('domain') }}"
+                    class="form-control @error('domain') is-invalid @enderror"
+                    placeholder="e.g. example.com"
+                    pattern="^(?!-)[A-Za-z0-9-]{1,63}(?<!-)(\.[A-Za-z0-9-]{1,63}(?<!-))*\.[A-Za-z]{2,}$"
+                    maxlength="255"
+                    required
+                >
+                <div class="invalid-feedback">
+                    Enter a valid domain (e.g. example.com).
+                </div>
+                @error('domain')
+                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                @enderror
+            </div>
+
             <button type="submit" class="btn btn-primary">Save</button>
             <a href="{{ route('applications.index') }}" class="btn btn-link">Cancel</a>
         </form>
