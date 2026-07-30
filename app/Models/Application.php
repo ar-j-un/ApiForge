@@ -14,6 +14,8 @@ class Application extends Model
         'name',
         'address',
         'port',
+        'forwarding_address',
+        'domain',
     ];
 
     protected function casts(): array
