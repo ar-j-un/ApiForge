@@ -13,7 +13,7 @@
         Create Application
     </div>
     <div class="card-body">
-        <form method="POST" action="{{ route('applications.store') }}" id="application-form" class="needs-validation" novalidate>
+        <form method="POST" action="{{ route('applications.store') }}" id="application-form">
             @csrf
 
             <div class="mb-3">
@@ -28,9 +28,7 @@
                     required
                     autofocus
                 >
-                <div class="invalid-feedback">
-                    Application name is required.
-                </div>
+                <div class="invalid-feedback"></div>
                 @error('name')
                     <div class="invalid-feedback d-block">{{ $message }}</div>
                 @enderror
@@ -45,12 +43,9 @@
                     value="{{ old('address') }}"
                     class="form-control @error('address') is-invalid @enderror"
                     placeholder="e.g. 192.168.1.10"
-                    pattern="^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$"
                     required
                 >
-                <div class="invalid-feedback">
-                    Enter a valid IPv4 address (e.g. 192.168.1.10).
-                </div>
+                <div class="invalid-feedback"></div>
                 @error('address')
                     <div class="invalid-feedback d-block">{{ $message }}</div>
                 @enderror
@@ -68,9 +63,7 @@
                     max="65535"
                     required
                 >
-                <div class="invalid-feedback">
-                    Port must be a number between 1 and 65535.
-                </div>
+                <div class="invalid-feedback"></div>
                 @error('port')
                     <div class="invalid-feedback d-block">{{ $message }}</div>
                 @enderror
@@ -85,12 +78,9 @@
                     value="{{ old('forwarding_address') }}"
                     class="form-control @error('forwarding_address') is-invalid @enderror"
                     placeholder="e.g. 10.0.0.5"
-                    pattern="^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$"
                     required
                 >
-                <div class="invalid-feedback">
-                    Enter a valid IPv4 address (e.g. 10.0.0.5).
-                </div>
+                <div class="invalid-feedback"></div>
                 @error('forwarding_address')
                     <div class="invalid-feedback d-block">{{ $message }}</div>
                 @enderror
@@ -105,13 +95,10 @@
                     value="{{ old('domain') }}"
                     class="form-control @error('domain') is-invalid @enderror"
                     placeholder="e.g. example.com"
-                    pattern="^(?!-)[A-Za-z0-9-]{1,63}(?<!-)(\.[A-Za-z0-9-]{1,63}(?<!-))*\.[A-Za-z]{2,}$"
                     maxlength="255"
                     required
                 >
-                <div class="invalid-feedback">
-                    Enter a valid domain (e.g. example.com).
-                </div>
+                <div class="invalid-feedback"></div>
                 @error('domain')
                     <div class="invalid-feedback d-block">{{ $message }}</div>
                 @enderror
@@ -126,17 +113,70 @@
 
 @push('scripts')
 <script>
-    (() => {
-        const form = document.getElementById('application-form');
+$(document).ready(function () {
 
-        form.addEventListener('submit', event => {
-            if (!form.checkValidity()) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
+    $.validator.addMethod('pattern', function (value, element, param) {
+        return this.optional(element) || param.test(value);
+    }, 'Invalid format.');
 
-            form.classList.add('was-validated');
-        }, false);
-    })();
+    $('#application-form').validate({
+        rules: {
+            name: {
+                required: true,
+                maxlength: 255,
+            },
+            address: {
+                required: true,
+                pattern: /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$/,
+            },
+            port: {
+                required: true,
+                digits: true,
+                min: 1,
+                max: 65535,
+            },
+            forwarding_address: {
+                required: true,
+                pattern: /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$/,
+            },
+            domain: {
+                required: true,
+                maxlength: 255,
+                pattern: /^(?!-)[A-Za-z0-9-]{1,63}(?<!-)(\.[A-Za-z0-9-]{1,63}(?<!-))*\.[A-Za-z]{2,}$/,
+            },
+        },
+        messages: {
+            name: {
+                required: 'Application name is required',
+            },
+            address: {
+                required: 'Address is required',
+                pattern: 'Enter a valid IPv4 address (e.g. 192.168.1.10)',
+            },
+            port: {
+                required: 'Port is required',
+                min: 'Port must be between 1 and 65535',
+                max: 'Port must be between 1 and 65535',
+            },
+            forwarding_address: {
+                required: 'Forwarding address is required',
+                pattern: 'Enter a valid IPv4 address (e.g. 10.0.0.5)',
+            },
+            domain: {
+                required: 'Domain is required',
+                pattern: 'Enter a valid domain (e.g. example.com)',
+            },
+        },
+        errorPlacement: function (error, element) {
+            element.next('.invalid-feedback').text(error.text());
+        },
+        highlight: function (element) {
+            $(element).addClass('is-invalid');
+        },
+        unhighlight: function (element) {
+            $(element).removeClass('is-invalid');
+        },
+    });
+});
 </script>
 @endpush
