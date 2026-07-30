@@ -23,6 +23,8 @@
                     <th>Name</th>
                     <th>Address</th>
                     <th>Port</th>
+                    <th>Forwarding Address</th>
+                    <th>Domain</th>
                     <th>Created</th>
                 </tr>
             </thead>
@@ -42,6 +44,8 @@
                 { data: 'name', name: 'name' },
                 { data: 'address', name: 'address' },
                 { data: 'port', name: 'port' },
+                { data: 'forwarding_address', name: 'forwarding_address' },
+                { data: 'domain', name: 'domain' },
                 { data: 'created_at', name: 'created_at' },
             ],
         });
