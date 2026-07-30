@@ -27,6 +27,14 @@ class StoreApplicationRequest extends FormRequest
             'name' => ['required','string','max:255'],
             'address' => ['required','ip'],
             'port' => ['required','integer','between:1,65535'],
+            'forwarding_address' => ['required', 'ip'],
+            'domain' => [
+                'required',
+                'string',
+                'max:255',
+                'regex:/^(?!-)[A-Za-z0-9-]{1,63}(?<!-)(\.[A-Za-z0-9-]{1,63}(?<!-))*\.[A-Za-z]{2,}$/',
+            ],
+
         ];
     }
 
@@ -41,6 +49,10 @@ class StoreApplicationRequest extends FormRequest
             'port.required' => 'Port is required',
             'port.integer' => 'Port should be an integer',
             'port.between' => 'Port should be between 1 and 65535',
+            'forwarding_address.required' => 'Forwarding address is required',
+            'forwarding_address.ip' => 'Forwarding address should be a valid IP',
+            'domain.required' => 'Domain is required',
+            'domain.regex' => 'Enter a valid domain (e.g. example.com)',
         ];
     }
 }
