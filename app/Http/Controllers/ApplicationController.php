@@ -17,7 +17,7 @@ class ApplicationController extends Controller
     {
         if ($request->ajax()) {
             $applications = auth()->user()->applications()->select([
-                'id', 'name', 'address', 'port', 'forward_address', 'domain', 'created_at',
+                'id', 'name', 'address', 'port', 'forwarding_address', 'domain', 'created_at',
             ]);
 
             return DataTables::of($applications)
