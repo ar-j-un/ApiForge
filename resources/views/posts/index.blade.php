@@ -21,6 +21,9 @@
                     <div class="mb-3 pb-3 border-bottom">
                         <h5>{{ $post['title'] }}</h5>
                         <p class="mb-0">{{ $post['body'] }}</p>
+                        <a href="{{ route('posts.edit', $post['id']) }}" class="btn btn-sm btn-outline-primary mt-3">
+                            Edit
+                        </a>
                     </div>
                 @empty
                     <p class="text-muted mb-0">No posts found for your account.</p>
