@@ -19,6 +19,16 @@
             </a>
         </li>
 
+        <li class="nav-item">
+            <a class="nav-link {{ request()->routeIs('applications.*') ? 'active' : '' }}" href="{{ route('applications.index') }}">
+                <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                    <path fill="var(--ci-primary-color, currentcolor)" d="M16 48v416h480V48Zm448 384H48v-96h416Zm0-128H48v-96h416ZM48 176V80h416v96Z" class="ci-primary" />
+                    <path fill="var(--ci-primary-color, currentcolor)" d="M80 112h32v32H80zm0 128h32v32H80zm0 128h32v32H80z" class="ci-primary" />
+                </svg>
+                Applications
+            </a>
+        </li>
+        
     </ul>
 
     <div class="sidebar-footer border-top d-none d-md-flex">
