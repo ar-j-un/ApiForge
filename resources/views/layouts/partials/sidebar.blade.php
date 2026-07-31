@@ -28,6 +28,15 @@
                 Applications
             </a>
         </li>
+
+       <li class="nav-item">
+            <a class="nav-link {{ request()->routeIs('posts.*') ? 'active' : '' }}" href="{{ route('posts.index') }}">
+                <svg class="nav-icon">
+                    <use xlink:href="{{ asset('build/icons/free.svg#cil-notes') }}"></use>
+                </svg>
+                Posts
+            </a>
+        </li>
         
     </ul>
 
