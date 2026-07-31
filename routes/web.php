@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\ApplicationController;
+use App\Http\Controllers\PostController;
 
 
 Route::middleware('guest')->group(function () {
@@ -18,6 +19,9 @@ Route::middleware('auth')->group(function () {
     Route::resource('applications', ApplicationController::class)
         ->only(['index', 'create', 'store']);
 });
+
+Route::get('posts/create', [PostController::class, 'create'])->name('posts.create');
+Route::post('posts', [PostController::class, 'store'])->name('posts.store');
 
 
 
