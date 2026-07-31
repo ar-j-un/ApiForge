@@ -16,7 +16,13 @@ class PostController extends Controller
 
     public function index()
     {
-        //
+        $userId = auth()->id();
+
+        $posts = $this->postApiService->findByUser($userId);
+
+        return view('posts.index', [
+            'posts' => $posts,
+        ]);
     }
 
     public function create(): view
@@ -29,7 +35,7 @@ class PostController extends Controller
         $post = $this->postApiService->create($request->validated());
 
         return redirect()
-            ->route('posts.create')
+            ->route('posts.index')
             ->with('success', "Post created successfully with ID: {$post['id']}");
     }
 
