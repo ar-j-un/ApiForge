@@ -28,4 +28,11 @@ class JsonPlaceholderPostService implements PostApiServiceInterface
     {
         return Http::post("{$this->baseUrl}/posts", $data)->throw()->json();
     }
+
+    public function findByUser(int $userId): array
+    {
+        return Http::get("{$this->baseUrl}/posts", [
+            'userId' => $userId,
+        ])->throw()->json();
+    }
 }
