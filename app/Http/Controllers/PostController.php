@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Contracts\PostApiServiceInterface;
 use App\Http\Requests\StorePostRequest;
+use App\Http\Requests\UpdatePostRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -44,14 +45,22 @@ class PostController extends Controller
         //
     }
 
-    public function edit(string $id)
+    public function edit(int $id): view
     {
-        //
+        $post = $this->postApiService->find($id);
+
+        return view('posts.edit', [
+            'post' => $post,
+        ]);
     }
 
-    public function update(Request $request, string $id)
+    public function update(UpdatePostRequest $request, int $id): RedirectResponse
     {
-        //
+        $this->postApiService->update($id, $request->validated());
+
+        return redirect()
+            ->route('posts.index')
+            ->with('success', 'Post updated successfully.');
     }
 
     public function destroy(string $id)
