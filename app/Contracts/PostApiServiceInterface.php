@@ -11,4 +11,6 @@ interface PostApiServiceInterface
     public function create(array $data): array;
 
     public function findByUser(int $userId): array;
+
+    public function update(int $id, array $data): array;
 }
