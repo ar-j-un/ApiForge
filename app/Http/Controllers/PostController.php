@@ -63,8 +63,12 @@ class PostController extends Controller
             ->with('success', 'Post updated successfully.');
     }
 
-    public function destroy(string $id)
+    public function destroy(int $id): RedirectResponse
     {
-        //
+        $this->postApiService->delete($id);
+
+        return redirect()
+            ->route('posts.index')
+            ->with('success', 'Post deleted successfully.');
     }
 }
