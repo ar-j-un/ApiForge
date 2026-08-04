@@ -207,4 +207,7 @@ return [
         'import_action' => env('TYPESENSE_IMPORT_ACTION', 'upsert'),
     ],
 
+    'elasticsearch' => [
+        'hosts' => explode(',', env('ELASTICSEARCH_HOSTS', 'http://localhost:9200')),
+    ],
 ];
