@@ -28,6 +28,18 @@
                 Applications
             </a>
         </li>
+
+        <li class="nav-item">
+            <a class="nav-link {{ request()->routeIs('blogs.*') ? 'active' : '' }}" href="{{ route('blogs.index') }}">
+                <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                    <rect width="288" height="32" x="112" y="152" fill="var(--ci-primary-color, currentcolor)" class="ci-primary" />
+                    <rect width="288" height="32" x="112" y="240" fill="var(--ci-primary-color, currentcolor)" class="ci-primary" />
+                    <rect width="152" height="32" x="112" y="328" fill="var(--ci-primary-color, currentcolor)" class="ci-primary" />
+                    <path fill="var(--ci-primary-color, currentcolor)" d="M480,48H32V464H480ZM448,432H64V80H448Z" class="ci-primary" />
+                </svg>
+                Blogs
+            </a>
+        </li>
         
     </ul>
 
