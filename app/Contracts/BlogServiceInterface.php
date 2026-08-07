@@ -2,14 +2,15 @@
 
 namespace App\Contracts;
 
-use App\Models\Blog;
+use App\DataTransferObjects\Blog;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 interface BlogServiceInterface
 {
-    public function paginate(int $perPage = 15): LengthAwarePaginator;
-    public function create(array $data): Blog;
-    public function update(Blog $blog, array $data): Blog;
-    public function delete(Blog $blog): bool;
-    public function search(string $query): LengthAwarePaginator;
+    public function paginateForUser(int $userId, int $perPage = 15): LengthAwarePaginator;
+    public function find(string $id): ?Blog;
+    public function create(array $data, int $userId): Blog;
+    public function update(string $id, array $data): Blog;
+    public function delete(string $id): bool;
+    public function search(string $query, int $userId): LengthAwarePaginator;
 }
