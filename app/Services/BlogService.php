@@ -1,26 +1,25 @@
 <?php
+
 namespace App\Services;
 
 use App\Contracts\BlogServiceInterface;
 use App\DataTransferObjects\Blog;
+use Elastic\Elasticsearch\Exception\ClientResponseException;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
+use MailerLite\LaravelElasticsearch\Manager as ElasticsearchManager;
 
 final class BlogService implements BlogServiceInterface
 {
     private const INDEX = 'blogs_index';
 
-    private function baseUrl(): string
-    {
-        return rtrim(config('scout.elasticsearch.hosts')[0] ?? 'http://localhost:9200', '/');
-    }
+    public function __construct(
+        private readonly ElasticsearchManager $elasticsearch,
+    ) {}
 
     private function refreshIndex(): void
     {
-        Http::withBody('', 'application/json')
-        ->post("{$this->baseUrl()}/".self::INDEX."/_refresh")
-        ->throw();
+        $this->elasticsearch->indices()->refresh(['index' => self::INDEX]);
     }
 
     #[\Override]
@@ -28,12 +27,15 @@ final class BlogService implements BlogServiceInterface
     {
         $page = (int) request('page', 1);
 
-        $response = Http::post("{$this->baseUrl()}/".self::INDEX."/_search", [
-            'query' => ['term' => ['user_id' => $userId]],
-            'sort' => [['created_at' => 'desc']],
-            'from' => ($page - 1) * $perPage,
-            'size' => $perPage,
-        ])->throw()->json();
+        $response = $this->elasticsearch->search([
+            'index' => self::INDEX,
+            'body' => [
+                'query' => ['term' => ['user_id' => $userId]],
+                'sort' => [['created_at' => 'desc']],
+                'from' => ($page - 1) * $perPage,
+                'size' => $perPage,
+            ],
+        ])->asArray();
 
         return $this->toPaginator($response, $perPage, $page);
     }
@@ -41,14 +43,17 @@ final class BlogService implements BlogServiceInterface
     #[\Override]
     public function find(string $id): ?Blog
     {
-        $response = Http::get("{$this->baseUrl()}/".self::INDEX."/_doc/{$id}");
-
-        if ($response->status() === 404) {
-            return null;
+        try {
+            $data = $this->elasticsearch->get([
+                'index' => self::INDEX,
+                'id' => $id,
+            ])->asArray();
+        } catch (ClientResponseException $err) {
+            if ($err->getResponse()->getStatusCode() === 404) {
+                return null;
+            }
+            throw $err;
         }
-
-        $response->throw();
-        $data = $response->json();
 
         return Blog::fromDocument($data['_id'], $data['_source']);
     }
@@ -70,8 +75,11 @@ final class BlogService implements BlogServiceInterface
             'updated_at' => now()->toIso8601String(),
         ];
 
-        Http::put("{$this->baseUrl()}/".self::INDEX."/_doc/{$id}", $document)
-            ->throw();
+        $this->elasticsearch->index([
+            'index' => self::INDEX,
+            'id' => $id,
+            'body' => $document,
+        ]);
 
         $this->refreshIndex();
 
@@ -87,9 +95,11 @@ final class BlogService implements BlogServiceInterface
         $data['is_published'] = (bool) ($data['is_published'] ?? false);
         $data['updated_at'] = now()->toIso8601String();
 
-        Http::post("{$this->baseUrl()}/".self::INDEX."/_update/{$id}", [
-            'doc' => $data,
-        ])->throw();
+        $this->elasticsearch->update([
+            'index' => self::INDEX,
+            'id' => $id,
+            'body' => ['doc' => $data],
+        ]);
 
         $this->refreshIndex();
 
@@ -99,8 +109,13 @@ final class BlogService implements BlogServiceInterface
     #[\Override]
     public function delete(string $id): bool
     {
-        Http::delete("{$this->baseUrl()}/".self::INDEX."/_doc/{$id}")->throw();
+        $this->elasticsearch->delete([
+            'index' => self::INDEX,
+            'id' => $id,
+        ]);
+
         $this->refreshIndex();
+
         return true;
     }
 
@@ -110,20 +125,23 @@ final class BlogService implements BlogServiceInterface
         $perPage = 15;
         $page = (int) request('page', 1);
 
-        $response = Http::post("{$this->baseUrl()}/".self::INDEX."/_search", [
-            'query' => [
-                'bool' => [
-                    'must' => [
-                        ['multi_match' => ['query' => $query, 'fields' => ['title', 'content', 'excerpt']]],
-                    ],
-                    'filter' => [
-                        ['term' => ['user_id' => $userId]],
+        $response = $this->elasticsearch->search([
+            'index' => self::INDEX,
+            'body' => [
+                'query' => [
+                    'bool' => [
+                        'must' => [
+                            ['multi_match' => ['query' => $query, 'fields' => ['title', 'content', 'excerpt']]],
+                        ],
+                        'filter' => [
+                            ['term' => ['user_id' => $userId]],
+                        ],
                     ],
                 ],
+                'from' => ($page - 1) * $perPage,
+                'size' => $perPage,
             ],
-            'from' => ($page - 1) * $perPage,
-            'size' => $perPage,
-        ])->throw()->json();
+        ])->asArray();
 
         return $this->toPaginator($response, $perPage, $page);
     }
