@@ -67,7 +67,7 @@ final class BlogService implements BlogServiceInterface
             'content' => $data['content'],
             'author_name' => $data['author_name'],
             'user_id' => $userId,
-            'is_published' => $data['is_published'] ?? false,
+            'is_published' => (bool) ($data['is_published'] ?? false),
             'created_at' => now()->toIso8601String(),
             'updated_at' => now()->toIso8601String(),
         ];
