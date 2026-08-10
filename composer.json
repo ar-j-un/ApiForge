@@ -14,8 +14,7 @@
         "laravel/framework": "^13.8",
         "laravel/scout": "*",
         "laravel/tinker": "^3.0",
-        "mailerlite/laravel-elasticsearch": "^12",
-        "matchish/laravel-scout-elasticsearch": "*",
+        "mailerlite/laravel-elasticsearch": "^11.1",
         "php-http/discovery": "*",
         "yajra/laravel-datatables-oracle": "*"
     },
