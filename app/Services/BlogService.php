@@ -4,7 +4,7 @@ namespace App\Services;
 
 use App\Contracts\BlogServiceInterface;
 use App\DataTransferObjects\Blog;
-use Elastic\Elasticsearch\Exception\ClientResponseException;
+use Elasticsearch\Common\Exceptions\Missing404Exception;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Str;
 use MailerLite\LaravelElasticsearch\Manager as ElasticsearchManager;
@@ -35,7 +35,7 @@ final class BlogService implements BlogServiceInterface
                 'from' => ($page - 1) * $perPage,
                 'size' => $perPage,
             ],
-        ])->asArray();
+        ]);
 
         return $this->toPaginator($response, $perPage, $page);
     }
@@ -44,18 +44,15 @@ final class BlogService implements BlogServiceInterface
     public function find(string $id): ?Blog
     {
         try {
-            $data = $this->elasticsearch->get([
+            $response = $this->elasticsearch->get([
                 'index' => self::INDEX,
                 'id' => $id,
-            ])->asArray();
-        } catch (ClientResponseException $err) {
-            if ($err->getResponse()->getStatusCode() === 404) {
-                return null;
-            }
-            throw $err;
+            ]);
+        } catch (Missing404Exception) {
+            return null;
         }
 
-        return Blog::fromDocument($data['_id'], $data['_source']);
+        return Blog::fromDocument($response['_id'], $response['_source']);
     }
 
     #[\Override]
@@ -141,7 +138,7 @@ final class BlogService implements BlogServiceInterface
                 'from' => ($page - 1) * $perPage,
                 'size' => $perPage,
             ],
-        ])->asArray();
+        ]);
 
         return $this->toPaginator($response, $perPage, $page);
     }
