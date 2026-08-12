@@ -3,7 +3,7 @@
 @section('content')
 <div class="card">
   <div class="card-header d-flex justify-content-between align-items-center">
-    <strong>My Blogs</strong>
+    <strong>My Blogs ({{ $blogCount }})</strong>
     <a href="{{ route('blogs.create') }}" class="btn btn-primary btn-sm">
       New Blog
     </a>
