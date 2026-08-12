@@ -29,6 +29,7 @@
           <tr>
             <th>Title</th>
             <th>Status</th>
+            <th>Country</th>
             <th>Created</th>
             <th class="text-end">Actions</th>
           </tr>
@@ -49,6 +50,7 @@
                   <span class="badge bg-secondary">Draft</span>
                 @endif
               </td>
+              <td>{{ $blog->country }}</td>
               <td>{{ \Illuminate\Support\Carbon::parse($blog->createdAt)->diffForHumans() }}</td>
               <td class="text-end">
                 <a href="{{ route('blogs.edit', $blog->id) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
