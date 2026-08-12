@@ -1,4 +1,5 @@
 <?php
+
 namespace App\DataTransferObjects;
 
 final class Blog
@@ -10,6 +11,7 @@ final class Blog
         public readonly ?string $excerpt,
         public readonly string $content,
         public readonly string $authorName,
+        public readonly string $country,
         public readonly int $userId,
         public readonly bool $isPublished,
         public readonly ?string $createdAt = null,
@@ -24,6 +26,7 @@ final class Blog
             excerpt: $source['excerpt'] ?? null,
             content: $source['content'],
             authorName: $source['author_name'],
+            country: $source['country'],
             userId: (int) $source['user_id'],
             isPublished: (bool) ($source['is_published'] ?? false),
             createdAt: $source['created_at'] ?? null,
