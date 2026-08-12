@@ -20,4 +20,8 @@ interface BlogServiceInterface
     public function search(string $query, int $userId): LengthAwarePaginator;
 
     public function countByUser(int $userId): int;
+
+    public function foreignBlogs(string $homeCountry = 'IN'): array;
+
+    public function foreignCountryCounts(string $homeCountry = 'IN'): array;
 }
