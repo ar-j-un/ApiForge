@@ -158,4 +158,23 @@ final class BlogService implements BlogServiceInterface
             options: ['path' => request()->url(), 'query' => request()->query()],
         );
     }
+
+    #[\Override]
+    public function countByUser(int $userId): int
+    {
+        $response = $this->elasticsearch->count([
+            'index' => self::INDEX,
+            'body' => [
+                'query' => [
+                    'bool' => [
+                        'filter' => [
+                            ['term' => ['user_id' => $userId]],
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        return $response['count'] ?? 0;
+    }
 }
