@@ -21,7 +21,7 @@ interface BlogServiceInterface
 
     public function countByUser(int $userId): int;
 
-    public function foreignBlogs(string $homeCountry = 'IN'): array;
+    public function foreignBlogs(string $homeCountry = 'India'): array;
 
-    public function foreignCountryCounts(string $homeCountry = 'IN'): array;
+    public function foreignCountryCounts(string $homeCountry = 'India'): array;
 }
