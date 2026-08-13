@@ -66,6 +66,7 @@ final class BlogService implements BlogServiceInterface
             'excerpt' => $data['excerpt'] ?? null,
             'content' => $data['content'],
             'author_name' => $data['author_name'],
+            'country' => $data['country'],
             'user_id' => $userId,
             'is_published' => (bool) ($data['is_published'] ?? false),
             'created_at' => now()->toIso8601String(),
@@ -176,5 +177,62 @@ final class BlogService implements BlogServiceInterface
         ]);
 
         return $response['count'] ?? 0;
+    }
+
+    #[\Override]
+    public function foreignCountryCounts(string $homeCountry = 'India'): array
+    {
+        $response = $this->elasticsearch->search([
+            'index' => self::INDEX,
+            'body' => [
+                'size' => 0,
+                'query' => [
+                    'bool' => [
+                        'must_not' => [
+                            ['term' => ['country' => $homeCountry]],
+                        ],
+                    ],
+                ],
+                'aggs' => [
+                    'by_country' => [
+                        'terms' => ['field' => 'country'],
+                    ],
+                ],
+            ],
+        ]);
+
+        return $response['aggregations']['by_country']['buckets'] ?? [];
+    }
+
+    #[\Override]
+    public function foreignBlogs(int $userId, int $perPage = 3, string $homeCountry = 'India'): LengthAwarePaginator
+    {
+        $page = (int) request('page', 1);
+
+        $response = $this->elasticsearch->search([
+            'index' => self::INDEX,
+            'body' => [
+                'query' => [
+                    'bool' => [
+                        'filter' => [
+                            ['match_all' => new \stdClass],
+                            ['term' => ['user_id' => $userId]],
+                        ],
+
+                        'must_not' => [
+                            ['term' => ['country' => $homeCountry]],
+                        ],
+                        'should' => [
+                            ['term' => ['country' => 'United States']],
+                            ['term' => ['country' => 'United Kingdom']],
+                        ],
+                    ],
+                ],
+                'from' => ($page - 1) * $perPage,
+                'size' => $perPage,
+            ],
+        ]);
+
+        return $this->toPaginator($response, $perPage, $page);
     }
 }
