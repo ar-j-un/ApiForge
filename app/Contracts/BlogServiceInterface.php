@@ -21,7 +21,7 @@ interface BlogServiceInterface
 
     public function countByUser(int $userId): int;
 
-    public function foreignBlogs(string $homeCountry = 'India'): array;
+    public function foreignBlogs(int $userId, int $perPage = 15, string $homeCountry = 'India'): LengthAwarePaginator;
 
     public function foreignCountryCounts(string $homeCountry = 'India'): array;
 }
