@@ -15,6 +15,8 @@ class BlogController extends Controller
         return view('blogs.index', [
             'blogs' => $this->blogs->paginateForUser(auth()->id()),
             'blogCount' => $this->blogs->countByUser(auth()->id()),
+            'foreignBlogs' => $this->blogs->foreignBlogs(auth()->id()),
+            'foreignCountryCounts' => $this->blogs->foreignCountryCounts(),
         ]);
     }
 
