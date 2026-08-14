@@ -25,7 +25,7 @@ final class BlogService implements BlogServiceInterface
     #[\Override]
     public function paginateForUser(int $userId, int $perPage = 3): LengthAwarePaginator
     {
-        $page = (int) request('page', 1);
+        $page = $this->resolvePage();
 
         $response = $this->elasticsearch->search([
             'index' => self::INDEX,
@@ -121,7 +121,7 @@ final class BlogService implements BlogServiceInterface
     public function search(string $query, int $userId): LengthAwarePaginator
     {
         $perPage = 15;
-        $page = (int) request('page', 1);
+        $page = $this->resolvePage();
 
         $response = $this->elasticsearch->search([
             'index' => self::INDEX,
@@ -158,6 +158,19 @@ final class BlogService implements BlogServiceInterface
             currentPage: $page,
             options: ['path' => request()->url(), 'query' => request()->query()],
         );
+    }
+
+    private function resolvePage(): int
+    {
+        $raw = request('page', 1);
+
+        if (! is_numeric($raw) || (int) $raw != $raw) {
+            return 1;
+        }
+
+        $page = (int) $raw;
+
+        return $page < 1 ? 1 : $page;
     }
 
     #[\Override]
@@ -207,7 +220,7 @@ final class BlogService implements BlogServiceInterface
     #[\Override]
     public function foreignBlogs(int $userId, int $perPage = 3, string $homeCountry = 'India'): LengthAwarePaginator
     {
-        $page = (int) request('page', 1);
+        $page = $this->resolvePage();
 
         $response = $this->elasticsearch->search([
             'index' => self::INDEX,
