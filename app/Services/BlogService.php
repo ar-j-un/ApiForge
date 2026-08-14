@@ -4,10 +4,13 @@ namespace App\Services;
 
 use App\Contracts\BlogServiceInterface;
 use App\DataTransferObjects\Blog;
+use App\Exceptions\BlogSearchException;
 use Elasticsearch\Common\Exceptions\Missing404Exception;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use MailerLite\LaravelElasticsearch\Manager as ElasticsearchManager;
+use Throwable;
 
 final class BlogService implements BlogServiceInterface
 {
@@ -27,17 +30,27 @@ final class BlogService implements BlogServiceInterface
     {
         $page = $this->resolvePage();
 
-        $response = $this->elasticsearch->search([
-            'index' => self::INDEX,
-            'body' => [
-                'query' => ['term' => ['user_id' => $userId]],
-                'sort' => [['created_at' => 'desc']],
-                'from' => ($page - 1) * $perPage,
-                'size' => $perPage,
-            ],
-        ]);
+        try {
+            $response = $this->elasticsearch->search([
+                'index' => self::INDEX,
+                'body' => [
+                    'query' => ['term' => ['user_id' => $userId]],
+                    'sort' => [['created_at' => 'desc']],
+                    'from' => ($page - 1) * $perPage,
+                    'size' => $perPage,
+                ],
+            ]);
 
-        return $this->toPaginator($response, $perPage, $page);
+            return $this->toPaginator($response, $perPage, $page);
+        } catch (Throwable $err) {
+            Log::error('Failed to paginate blogs from Elasticsearch', [
+                'user_id' => $userId,
+                'page' => $page,
+                'exception' => $err->getMessage(),
+            ]);
+
+            throw new BlogSearchException('Unable to load blogs at this time.', previous: $err);
+        }
     }
 
     #[\Override]
