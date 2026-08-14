@@ -14,10 +14,18 @@ class BlogController extends Controller
 
     public function index()
     {
-        return view('blogs.index', [
-            'blogs' => $this->blogs->paginateForUser(auth()->id()),
-            'blogCount' => $this->blogs->countByUser(auth()->id()),
-        ]);
+        try {
+            $blogs = $this->blogs->paginateForUser(auth()->id());
+            $blogCount = $this->blogs->countByUser(auth()->id());
+        } catch (BlogSearchException $err) {
+            return view('blogs.index', [
+                'blogs' => new LengthAwarePaginator([], 0, 3),
+                'blogCount' => 0,
+                'searchError' => $err->getMessage(),
+            ]);
+        }
+
+        return view('blogs.index', compact('blogs', 'blogCount'));
     }
 
     public function create()
