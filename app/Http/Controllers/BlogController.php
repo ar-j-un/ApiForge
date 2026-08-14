@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Contracts\BlogServiceInterface;
+use App\Exceptions\BlogSearchException;
 use App\Http\Requests\SearchBlogRequest;
 use App\Http\Requests\StoreBlogRequest;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class BlogController extends Controller
 {
@@ -39,10 +41,18 @@ class BlogController extends Controller
 
     public function show()
     {
-        return view('blogs.show', [
-            'foreignBlogs' => $this->blogs->foreignBlogs(auth()->id()),
-            'foreignCountryCounts' => $this->blogs->foreignCountryCounts(),
-        ]);
+        try {
+            $foreignBlogs = $this->blogs->foreignBlogs(auth()->id());
+            $foreignCountryCounts = $this->blogs->foreignCountryCounts();
+        } catch (BlogSearchException $err) {
+            return view('blogs.show', [
+                'foreignBlogs' => new LengthAwarePaginator([], 0, 3),
+                'foreignCountryCounts' => [],
+                'searchError' => $err->getMessage(),
+            ]);
+        }
+
+        return view('blogs.show', compact('foreignBlogs', 'foreignCountryCounts'));
     }
 
     public function edit(string $id)
