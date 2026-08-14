@@ -77,4 +77,5 @@
 
   </div>
 </div>
+<a href="{{ route('blogs.show') }}" class="btn btn-primary btn-sm mt-5 ml-3">Get Foreign Blogs Only</a>
 @endsection
