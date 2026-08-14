@@ -1,5 +1,11 @@
 @extends('layouts.app')
 @section('content')
+@if (session('error') ?? $searchError ?? false)
+  <div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <strong>Something went wrong.</strong> {{ session('error') ?? $searchError }}
+    <button type="button" class="btn-close" data-coreui-dismiss="alert" aria-label="Close"></button>
+  </div>
+@endif
 <div class="card mt-5">
   <div class="card-body">
       @if ($foreignBlogs->isEmpty())
