@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Contracts\BlogServiceInterface;
 use App\DataTransferObjects\Blog;
-use App\Exceptions\BlogSearchException;
 use Elasticsearch\Common\Exceptions\Missing404Exception;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Log;
@@ -25,8 +24,16 @@ final class BlogService implements BlogServiceInterface
         $this->elasticsearch->indices()->refresh(['index' => self::INDEX]);
     }
 
+    private function withExceptions(string $message, Throwable $err): array
+    {
+        return [
+            'message' => $message,
+            'detail' => $err->getMessage(),
+        ];
+    }
+
     #[\Override]
-    public function paginateForUser(int $userId, int $perPage = 3): LengthAwarePaginator
+    public function paginateForUser(int $userId, int $perPage = 3): LengthAwarePaginator|array
     {
         $page = $this->resolvePage();
 
@@ -49,7 +56,7 @@ final class BlogService implements BlogServiceInterface
                 'exception' => $err->getMessage(),
             ]);
 
-            throw new BlogSearchException('Unable to load blogs at this time.', previous: $err);
+            return $this->withExceptions("We couldn't load your blogs right now. Please try again shortly.", $err);
         }
     }
 
