@@ -32,37 +32,46 @@ class BlogController extends Controller
 
     public function store(StoreBlogRequest $request)
     {
-        $this->blogs->create($request->validated(), auth()->id());
+        $result = $this->blogs->create($request->validated(), auth()->id());
+
+        if (is_array($result)) {
+            return back()->withInput()->with(['error' => $result['message']]);
+        }
 
         return redirect()->route('blogs.index')->with('success', 'Blog created.');
     }
 
     public function search(SearchBlogRequest $request)
     {
-        $blogs = $this->blogs->search($request->validated('search_query'), auth()->id());
+        $result = $this->blogs->search($request->validated('search_query'), auth()->id());
 
-        return view('blogs.search', compact('blogs'));
+        return view('blogs.search', [
+            'blogs' => is_array($result) ? new LengthAwarePaginator([], 0, 15) : $result,
+            'searchError' => is_array($result) ? $result['message'] : null,
+        ]);
     }
 
     public function show()
     {
-        try {
-            $foreignBlogs = $this->blogs->foreignBlogs(auth()->id());
-            $foreignCountryCounts = $this->blogs->foreignCountryCounts();
-        } catch (BlogSearchException $err) {
-            return view('blogs.show', [
-                'foreignBlogs' => new LengthAwarePaginator([], 0, 3),
-                'foreignCountryCounts' => [],
-                'searchError' => $err->getMessage(),
-            ]);
-        }
+        $foreignBlogs = $this->blogs->foreignBlogs(auth()->id());
+        $foreignCountryCounts = $this->blogs->foreignCountryCounts();
 
-        return view('blogs.show', compact('foreignBlogs', 'foreignCountryCounts'));
+        $blogsFailed = is_array($foreignBlogs);
+        $countsFailed = isset($foreignCountryCounts['_error']);
+
+        return view('blogs.show', [
+            'foreignBlogs' => $blogsFailed ? new LengthAwarePaginator([], 0, 3) : $foreignBlogs,
+            'foreignCountryCounts' => $countsFailed ? [] : $foreignCountryCounts,
+            'searchError' => $error['message'] ?? null,
+        ]);
     }
 
     public function edit(string $id)
     {
         $blog = $this->blogs->find($id);
+        if (is_array($blog)) {
+            return redirect()->route('blogs.index')->with(['error' => $blog['message']]);
+        }
         abort_if(! $blog || $blog->userId !== auth()->id(), 403);
 
         return view('blogs.edit', compact('blog'));
@@ -71,9 +80,16 @@ class BlogController extends Controller
     public function update(StoreBlogRequest $request, string $id)
     {
         $blog = $this->blogs->find($id);
+        if (is_array($blog)) {
+            return redirect()->route('blogs.index')->with(['error' => $blog['message']]);
+        }
         abort_if(! $blog || $blog->userId !== auth()->id(), 403);
 
-        $this->blogs->update($id, $request->validated());
+        $result = $this->blogs->update($id, $request->validated());
+
+        if (is_array($result)) {
+            return back()->withInput()->with(['error' => $result['message']]);
+        }
 
         return redirect()->route('blogs.index')->with('success', 'Blog updated.');
     }
@@ -81,9 +97,15 @@ class BlogController extends Controller
     public function destroy(string $id)
     {
         $blog = $this->blogs->find($id);
+        if (is_array($blog)) {
+            return redirect()->route('blogs.index')->with(['error' => $blog['message']]);
+        }
         abort_if(! $blog || $blog->userId !== auth()->id(), 403);
 
-        $this->blogs->delete($id);
+        $result = $this->blogs->delete($id);
+        if (is_array($result)) {
+            return back()->with(['error' => $result['message']]);
+        }
 
         return redirect()->route('blogs.index')->with('success', 'Blog deleted.');
     }
