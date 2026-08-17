@@ -61,7 +61,7 @@ final class BlogService implements BlogServiceInterface
     }
 
     #[\Override]
-    public function find(string $id): ?Blog
+    public function find(string $id): Blog|array
     {
         try {
             $response = $this->elasticsearch->get([
@@ -69,21 +69,21 @@ final class BlogService implements BlogServiceInterface
                 'id' => $id,
             ]);
         } catch (Missing404Exception) {
-            return null;
+            return ['message' => "blog doesn't exist."];
         } catch (Throwable $err) {
             Log::error('Failed to fetch blog from Elasticsearch', [
                 'id' => $id,
                 'exception' => $err->getMessage(),
             ]);
 
-            throw new BlogSearchException('Unable to load this blog at this time.', previous: $err);
+            return $this->withExceptions("We couldn't load this blog right now. Please try again shortly.", $err);
         }
 
         return Blog::fromDocument($response['_id'], $response['_source']);
     }
 
     #[\Override]
-    public function create(array $data, int $userId): Blog
+    public function create(array $data, int $userId): Blog|array
     {
         $id = (string) Str::uuid();
 
@@ -114,14 +114,14 @@ final class BlogService implements BlogServiceInterface
                 'exception' => $err->getMessage(),
             ]);
 
-            throw new BlogSearchException('Unable to save this blog at this time.', previous: $err);
+            return $this->withExceptions("We couldn't save your blog. Please try again.", $err);
         }
 
         return Blog::fromDocument($id, $document);
     }
 
     #[\Override]
-    public function update(string $id, array $data): Blog
+    public function update(string $id, array $data): Blog|array
     {
         if (isset($data['title'])) {
             $data['slug'] = Str::slug($data['title']);
@@ -129,55 +129,82 @@ final class BlogService implements BlogServiceInterface
         $data['is_published'] = (bool) ($data['is_published'] ?? false);
         $data['updated_at'] = now()->toIso8601String();
 
-        $this->elasticsearch->update([
-            'index' => self::INDEX,
-            'id' => $id,
-            'body' => ['doc' => $data],
-        ]);
+        try {
+            $this->elasticsearch->update([
+                'index' => self::INDEX,
+                'id' => $id,
+                'body' => ['doc' => $data],
+            ]);
+            $this->refreshIndex();
+        } catch (Throwable $err) {
+            Log::error('Failed to update blog in Elasticsearch', [
+                'id' => $id,
+                'exception' => $err->getMessage(),
+            ]);
 
-        $this->refreshIndex();
+            return $this->withExceptions("We couldn't update your blog. Please try again.", $err);
+        }
 
         return $this->find($id);
     }
 
     #[\Override]
-    public function delete(string $id): bool
+    public function delete(string $id): bool|array
     {
-        $this->elasticsearch->delete([
-            'index' => self::INDEX,
-            'id' => $id,
-        ]);
+        try {
+            $this->elasticsearch->delete([
+                'index' => self::INDEX,
+                'id' => $id,
+            ]);
+            $this->refreshIndex();
+        } catch (Throwable $err) {
+            Log::error('Failed to delete blog from Elasticsearch', [
+                'id' => $id,
+                'exception' => $err->getMessage(),
+            ]);
 
-        $this->refreshIndex();
+            return $this->withExceptions("We couldn't delete your blog. Please try again.", $err);
+        }
 
         return true;
     }
 
     #[\Override]
-    public function search(string $query, int $userId): LengthAwarePaginator
+    public function search(string $query, int $userId): LengthAwarePaginator|array
     {
         $perPage = 15;
         $page = $this->resolvePage();
 
-        $response = $this->elasticsearch->search([
-            'index' => self::INDEX,
-            'body' => [
-                'query' => [
-                    'bool' => [
-                        'must' => [
-                            ['multi_match' => ['query' => $query, 'fields' => ['title', 'content', 'excerpt']]],
-                        ],
-                        'filter' => [
-                            ['term' => ['user_id' => $userId]],
+        try {
+            $response = $this->elasticsearch->search([
+                'index' => self::INDEX,
+                'body' => [
+                    'query' => [
+                        'bool' => [
+                            'must' => [
+                                ['multi_match' => ['query' => $query, 'fields' => ['title', 'content', 'excerpt']]],
+                            ],
+                            'filter' => [
+                                ['term' => ['user_id' => $userId]],
+                            ],
                         ],
                     ],
+                    'from' => ($page - 1) * $perPage,
+                    'size' => $perPage,
                 ],
-                'from' => ($page - 1) * $perPage,
-                'size' => $perPage,
-            ],
-        ]);
+            ]);
 
-        return $this->toPaginator($response, $perPage, $page);
+            return $this->toPaginator($response, $perPage, $page);
+        } catch (Throwable $err) {
+            Log::error('Failed to search blogs in Elasticsearch', [
+                'query' => $query,
+                'user_id' => $userId,
+                'page' => $page,
+                'exception' => $err->getMessage(),
+            ]);
+
+            return $this->withExceptions('Search is temporarily unavailable. Please try again shortly.', $err);
+        }
     }
 
     private function toPaginator(array $response, int $perPage, int $page): LengthAwarePaginator
@@ -210,78 +237,107 @@ final class BlogService implements BlogServiceInterface
     }
 
     #[\Override]
-    public function countByUser(int $userId): int
+    public function countByUser(int $userId): int|array
     {
-        $response = $this->elasticsearch->count([
-            'index' => self::INDEX,
-            'body' => [
-                'query' => [
-                    'bool' => [
-                        'filter' => [
-                            ['term' => ['user_id' => $userId]],
+        try {
+            $response = $this->elasticsearch->count([
+                'index' => self::INDEX,
+                'body' => [
+                    'query' => [
+                        'bool' => [
+                            'filter' => [
+                                ['term' => ['user_id' => $userId]],
+                            ],
                         ],
                     ],
                 ],
-            ],
-        ]);
+            ]);
 
-        return $response['count'] ?? 0;
+            return $response['count'] ?? 0;
+        } catch (Throwable $err) {
+            Log::error('Failed to count blogs from Elasticsearch', [
+                'user_id' => $userId,
+                'exception' => $err->getMessage(),
+            ]);
+
+            return $this->withExceptions("We couldn't load your blog count right now.", $err);
+        }
     }
 
     #[\Override]
     public function foreignCountryCounts(string $homeCountry = 'India'): array
     {
-        $response = $this->elasticsearch->search([
-            'index' => self::INDEX,
-            'body' => [
-                'size' => 0,
-                'query' => [
-                    'bool' => [
-                        'must_not' => [
-                            ['term' => ['country' => $homeCountry]],
+        try {
+            $response = $this->elasticsearch->search([
+                'index' => self::INDEX,
+                'body' => [
+                    'size' => 0,
+                    'query' => [
+                        'bool' => [
+                            'must_not' => [
+                                ['term' => ['country' => $homeCountry]],
+                            ],
+                        ],
+                    ],
+                    'aggs' => [
+                        'by_country' => [
+                            'terms' => ['field' => 'country'],
                         ],
                     ],
                 ],
-                'aggs' => [
-                    'by_country' => [
-                        'terms' => ['field' => 'country'],
-                    ],
-                ],
-            ],
-        ]);
+            ]);
 
-        return $response['aggregations']['by_country']['buckets'] ?? [];
+            return $response['aggregations']['by_country']['buckets'] ?? [];
+        } catch (Throwable $err) {
+            Log::error('Failed to fetch foreign country counts from Elasticsearch', [
+                'home_country' => $homeCountry,
+                'exception' => $err->getMessage(),
+            ]);
+
+            return $this->withExceptions("We couldn't load country stats right now.", $err, marked: true);
+        }
     }
 
     #[\Override]
-    public function foreignBlogs(int $userId, int $perPage = 3, string $homeCountry = 'India'): LengthAwarePaginator
+    public function foreignBlogs(int $userId, int $perPage = 3, string $homeCountry = 'India'): LengthAwarePaginator|array
     {
         $page = $this->resolvePage();
 
-        $response = $this->elasticsearch->search([
-            'index' => self::INDEX,
-            'body' => [
-                'query' => [
-                    'bool' => [
-                        'filter' => [
-                            ['match_all' => new \stdClass],
-                            ['term' => ['user_id' => $userId]],
-                        ],
+        try {
+            $response = $this->elasticsearch->search([
+                'index' => self::INDEX,
+                'body' => [
+                    'query' => [
+                        'bool' => [
+                            'filter' => [
+                                ['match_all' => new \stdClass],
+                                ['term' => ['user_id' => $userId]],
+                            ],
 
-                        'must_not' => [
-                            ['term' => ['country' => $homeCountry]],
-                        ],
-                        'should' => [
-                            ['term' => ['country' => 'United States']],
-                            ['term' => ['country' => 'United Kingdom']],
+                            'must_not' => [
+                                ['term' => ['country' => $homeCountry]],
+                            ],
+                            'should' => [
+                                ['term' => ['country' => 'United States']],
+                                ['term' => ['country' => 'United Kingdom']],
+                            ],
                         ],
                     ],
+                    'from' => ($page - 1) * $perPage,
+                    'size' => $perPage,
                 ],
-                'from' => ($page - 1) * $perPage,
-                'size' => $perPage,
-            ],
-        ]);
+            ]);
 
-        return $this->toPaginator($response, $perPage, $page);
+            return $this->toPaginator($response, $perPage, $page);
+        } catch (Throwable $err) {
+            Log::error('Failed to fetch foreign blogs from Elasticsearch', [
+                'user_id' => $userId,
+                'page' => $page,
+                'home_country' => $homeCountry,
+                'exception' => $err->getMessage(),
+            ]);
+
+            return $this->withExceptions("We couldn't load foreign blogs right now.", $err);
+        }
     }
 }
