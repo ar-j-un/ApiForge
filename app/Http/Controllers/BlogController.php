@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Contracts\BlogServiceInterface;
-use App\Exceptions\BlogSearchException;
 use App\Http\Requests\SearchBlogRequest;
 use App\Http\Requests\StoreBlogRequest;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -14,18 +13,16 @@ class BlogController extends Controller
 
     public function index()
     {
-        try {
-            $blogs = $this->blogs->paginateForUser(auth()->id());
-            $blogCount = $this->blogs->countByUser(auth()->id());
-        } catch (BlogSearchException $err) {
-            return view('blogs.index', [
-                'blogs' => new LengthAwarePaginator([], 0, 3),
-                'blogCount' => 0,
-                'searchError' => $err->getMessage(),
-            ]);
-        }
+        $blogs = $this->blogs->paginateForUser(auth()->id());
+        $blogCount = $this->blogs->countByUser(auth()->id());
 
-        return view('blogs.index', compact('blogs', 'blogCount'));
+        $error = is_array($blogs) ? $blogs : (is_array($blogCount) ? $blogCount : null);
+
+        return view('blogs.index', [
+            'blogs' => is_array($blogs) ? new LengthAwarePaginator([], 0, 3) : $blogs,
+            'blogCount' => is_array($blogCount) ? 0 : $blogCount,
+            'searchError' => $error['message'] ?? null,
+        ]);
     }
 
     public function create()
