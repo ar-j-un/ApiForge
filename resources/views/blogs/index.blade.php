@@ -57,7 +57,7 @@
                 @endif
               </td>
               <td>{{ $blog->country }}</td>
-              <td>{{ \Illuminate\Support\Carbon::parse($blog->createdAt)->diffForHumans() }}</td>
+              <td>{{ $blog->createdAt }}</td>
               <td class="text-end">
                 <a href="{{ route('blogs.edit', $blog->id) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
                 <form action="{{ route('blogs.destroy', $blog->id) }}" method="POST" class="d-inline"
