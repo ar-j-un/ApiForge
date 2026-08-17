@@ -63,6 +63,13 @@ final class BlogService implements BlogServiceInterface
             ]);
         } catch (Missing404Exception) {
             return null;
+        } catch (Throwable $err) {
+            Log::error('Failed to fetch blog from Elasticsearch', [
+                'id' => $id,
+                'exception' => $err->getMessage(),
+            ]);
+
+            throw new BlogSearchException('Unable to load this blog at this time.', previous: $err);
         }
 
         return Blog::fromDocument($response['_id'], $response['_source']);
@@ -86,13 +93,22 @@ final class BlogService implements BlogServiceInterface
             'updated_at' => now()->toIso8601String(),
         ];
 
-        $this->elasticsearch->index([
-            'index' => self::INDEX,
-            'id' => $id,
-            'body' => $document,
-        ]);
+        try {
+            $this->elasticsearch->index([
+                'index' => self::INDEX,
+                'id' => $id,
+                'body' => $document,
+            ]);
+            $this->refreshIndex();
+        } catch (Throwable $err) {
+            Log::error('Failed to create blog in Elasticsearch', [
+                'id' => $id,
+                'user_id' => $userId,
+                'exception' => $err->getMessage(),
+            ]);
 
-        $this->refreshIndex();
+            throw new BlogSearchException('Unable to save this blog at this time.', previous: $err);
+        }
 
         return Blog::fromDocument($id, $document);
     }
