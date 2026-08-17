@@ -2,6 +2,8 @@
 
 namespace App\DataTransferObjects;
 
+use Illuminate\Support\Carbon;
+
 final class Blog
 {
     public function __construct(
@@ -19,6 +21,8 @@ final class Blog
 
     public static function fromDocument(string $id, array $source): self
     {
+        $createdAt = $source['created_at'] ?? null;
+
         return new self(
             id: $id,
             title: $source['title'],
@@ -29,7 +33,7 @@ final class Blog
             country: $source['country'],
             userId: (int) $source['user_id'],
             isPublished: (bool) ($source['is_published'] ?? false),
-            createdAt: $source['created_at'] ?? null,
+            createdAt: $createdAt !== null ? Carbon::parse($createdAt)->diffForHumans() : 'Unknown',
         );
     }
 }
