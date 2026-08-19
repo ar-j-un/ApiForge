@@ -73,7 +73,7 @@ final class BlogService implements BlogServiceInterface
     }
 
     #[\Override]
-    public function find(string $id): Blog|array|null
+    public function find(string $id): array
     {
         try {
             $response = $this->elasticsearch->get([
@@ -81,21 +81,21 @@ final class BlogService implements BlogServiceInterface
                 'id' => $id,
             ]);
         } catch (Missing404Exception) {
-            return null;
+            return $this->success(null);
         } catch (Throwable $err) {
             Log::error('Failed to fetch blog from Elasticsearch', [
                 'id' => $id,
                 'exception' => $err->getMessage(),
             ]);
 
-            return $this->withExceptions("We couldn't load this blog right now. Please try again shortly.", $err);
+            return $this->failure("We couldn't load this blog right now. Please try again shortly.", $err);
         }
 
-        return Blog::fromDocument($response['_id'], $response['_source']);
+        return $this->success(Blog::fromDocument($response['_id'], $response['_source']));
     }
 
     #[\Override]
-    public function create(array $data, int $userId): Blog|array
+    public function create(array $data, int $userId): array
     {
         $id = (string) Str::uuid();
 
@@ -119,6 +119,8 @@ final class BlogService implements BlogServiceInterface
                 'body' => $document,
             ]);
             $this->refreshIndex();
+
+            return $this->success(Blog::fromDocument($id, $document));
         } catch (Throwable $err) {
             Log::error('Failed to create blog in Elasticsearch', [
                 'id' => $id,
@@ -126,14 +128,12 @@ final class BlogService implements BlogServiceInterface
                 'exception' => $err->getMessage(),
             ]);
 
-            return $this->withExceptions("We couldn't save your blog. Please try again.", $err);
+            return $this->failure("We couldn't save your blog. Please try again.", $err);
         }
-
-        return Blog::fromDocument($id, $document);
     }
 
     #[\Override]
-    public function update(string $id, array $data): Blog|array
+    public function update(string $id, array $data): array
     {
         if (isset($data['title'])) {
             $data['slug'] = Str::slug($data['title']);
@@ -148,20 +148,20 @@ final class BlogService implements BlogServiceInterface
                 'body' => ['doc' => $data],
             ]);
             $this->refreshIndex();
+
+            return $this->success(true);
         } catch (Throwable $err) {
             Log::error('Failed to update blog in Elasticsearch', [
                 'id' => $id,
                 'exception' => $err->getMessage(),
             ]);
 
-            return $this->withExceptions("We couldn't update your blog. Please try again.", $err);
+            return $this->failure("We couldn't update your blog. Please try again.", $err);
         }
-
-        return $this->find($id);
     }
 
     #[\Override]
-    public function delete(string $id): bool|array
+    public function delete(string $id): array
     {
         try {
             $this->elasticsearch->delete([
@@ -169,20 +169,20 @@ final class BlogService implements BlogServiceInterface
                 'id' => $id,
             ]);
             $this->refreshIndex();
+
+            return $this->success(true);
         } catch (Throwable $err) {
             Log::error('Failed to delete blog from Elasticsearch', [
                 'id' => $id,
                 'exception' => $err->getMessage(),
             ]);
 
-            return $this->withExceptions("We couldn't delete your blog. Please try again.", $err);
+            return $this->failure("We couldn't delete your blog. Please try again.", $err);
         }
-
-        return true;
     }
 
     #[\Override]
-    public function search(string $query, int $userId): LengthAwarePaginator|array
+    public function search(string $query, int $userId): array
     {
         $perPage = 15;
         $page = $this->resolvePage();
@@ -206,7 +206,7 @@ final class BlogService implements BlogServiceInterface
                 ],
             ]);
 
-            return $this->toPaginator($response, $perPage, $page);
+            return $this->success($this->toPaginator($response, $perPage, $page));
         } catch (Throwable $err) {
             Log::error('Failed to search blogs in Elasticsearch', [
                 'query' => $query,
@@ -215,7 +215,7 @@ final class BlogService implements BlogServiceInterface
                 'exception' => $err->getMessage(),
             ]);
 
-            return $this->withExceptions('Search is temporarily unavailable. Please try again shortly.', $err);
+            return $this->failure('Search is temporarily unavailable. Please try again shortly.', $err);
         }
     }
 
@@ -249,7 +249,7 @@ final class BlogService implements BlogServiceInterface
     }
 
     #[\Override]
-    public function countByUser(int $userId): int|array
+    public function countByUser(int $userId): array
     {
         try {
             $response = $this->elasticsearch->count([
@@ -265,14 +265,14 @@ final class BlogService implements BlogServiceInterface
                 ],
             ]);
 
-            return $response['count'] ?? 0;
+            return $this->success($response['count'] ?? 0);
         } catch (Throwable $err) {
             Log::error('Failed to count blogs from Elasticsearch', [
                 'user_id' => $userId,
                 'exception' => $err->getMessage(),
             ]);
 
-            return $this->withExceptions("We couldn't load your blog count right now.", $err);
+            return $this->failure("We couldn't load your blog count right now.", $err);
         }
     }
 
@@ -299,19 +299,19 @@ final class BlogService implements BlogServiceInterface
                 ],
             ]);
 
-            return $response['aggregations']['by_country']['buckets'] ?? [];
+            return $this->success($response['aggregations']['by_country']['buckets'] ?? []);
         } catch (Throwable $err) {
             Log::error('Failed to fetch foreign country counts from Elasticsearch', [
                 'home_country' => $homeCountry,
                 'exception' => $err->getMessage(),
             ]);
 
-            return $this->withExceptions("We couldn't load country stats right now.", $err, marked: true);
+            return $this->failure("We couldn't load country stats right now.", $err);
         }
     }
 
     #[\Override]
-    public function foreignBlogs(int $userId, int $perPage = 3, string $homeCountry = 'India'): LengthAwarePaginator|array
+    public function foreignBlogs(int $userId, int $perPage = 3, string $homeCountry = 'India'): array
     {
         $page = $this->resolvePage();
 
@@ -325,7 +325,6 @@ final class BlogService implements BlogServiceInterface
                                 ['match_all' => new \stdClass],
                                 ['term' => ['user_id' => $userId]],
                             ],
-
                             'must_not' => [
                                 ['term' => ['country' => $homeCountry]],
                             ],
@@ -340,7 +339,7 @@ final class BlogService implements BlogServiceInterface
                 ],
             ]);
 
-            return $this->toPaginator($response, $perPage, $page);
+            return $this->success($this->toPaginator($response, $perPage, $page));
         } catch (Throwable $err) {
             Log::error('Failed to fetch foreign blogs from Elasticsearch', [
                 'user_id' => $userId,
@@ -349,7 +348,7 @@ final class BlogService implements BlogServiceInterface
                 'exception' => $err->getMessage(),
             ]);
 
-            return $this->withExceptions("We couldn't load foreign blogs right now.", $err);
+            return $this->failure("We couldn't load foreign blogs right now.", $err);
         }
     }
 }
