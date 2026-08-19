@@ -61,7 +61,7 @@ final class BlogService implements BlogServiceInterface
     }
 
     #[\Override]
-    public function find(string $id): Blog|array
+    public function find(string $id): Blog|array|null
     {
         try {
             $response = $this->elasticsearch->get([
@@ -69,10 +69,7 @@ final class BlogService implements BlogServiceInterface
                 'id' => $id,
             ]);
         } catch (Missing404Exception) {
-            return [
-                'message' => 'The blog you are looking for could not be found.',
-                'detail' => null,
-            ];
+            return null;
         } catch (Throwable $err) {
             Log::error('Failed to fetch blog from Elasticsearch', [
                 'id' => $id,
