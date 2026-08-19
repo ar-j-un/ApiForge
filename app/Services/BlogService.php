@@ -69,7 +69,10 @@ final class BlogService implements BlogServiceInterface
                 'id' => $id,
             ]);
         } catch (Missing404Exception) {
-            return ['message' => "blog doesn't exist."];
+            return [
+                'message' => 'The blog you are looking for could not be found.',
+                'detail' => null,
+            ];
         } catch (Throwable $err) {
             Log::error('Failed to fetch blog from Elasticsearch', [
                 'id' => $id,
