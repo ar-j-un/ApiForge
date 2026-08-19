@@ -13,15 +13,16 @@ class BlogController extends Controller
 
     public function index()
     {
-        $blogs = $this->blogs->paginateForUser(auth()->id());
-        $blogCount = $this->blogs->countByUser(auth()->id());
+        $blogsResult = $this->blogs->paginateForUser(auth()->id());
+        $countResult = $this->blogs->countByUser(auth()->id());
 
-        $error = is_array($blogs) ? $blogs : (is_array($blogCount) ? $blogCount : null);
+        $error = ! $blogsResult['success'] ? $blogsResult['message']
+                : (! $countResult['success'] ? $countResult['message'] : null);
 
         return view('blogs.index', [
-            'blogs' => is_array($blogs) ? new LengthAwarePaginator([], 0, 3) : $blogs,
-            'blogCount' => is_array($blogCount) ? 0 : $blogCount,
-            'searchError' => $error['message'] ?? null,
+            'blogs' => $blogsResult['success'] ? $blogsResult['data'] : new LengthAwarePaginator([], 0, 3),
+            'blogCount' => $countResult['success'] ? $countResult['data'] : 0,
+            'searchError' => $error,
         ]);
     }
 
