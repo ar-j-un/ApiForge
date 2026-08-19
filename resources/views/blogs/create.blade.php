@@ -36,6 +36,11 @@
       </div>
 
       <div class="mb-3">
+        <label for="country" class="form-label">Country</label>
+        <input type="text" name="country" id="country" class="form-control" value="{{ old('country') }}" maxlength="500">
+      </div>
+
+      <div class="mb-3">
         <label for="author_name" class="form-label">Author Name</label>
         <input type="text" name="author_name" id="author_name" class="form-control"
                value="{{ old('author_name', auth()->user()->name) }}" required>
