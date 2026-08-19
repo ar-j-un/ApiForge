@@ -72,7 +72,8 @@ class BlogController extends Controller
         if (is_array($blog)) {
             return redirect()->route('blogs.index')->with(['error' => $blog['message']]);
         }
-        abort_if(! $blog || $blog->userId !== auth()->id(), 403, 'You are not authorized to view this blog.');
+        abort_if(! $blog, 404, 'The blog you are looking for could not be found.');
+        abort_if($blog->userId !== auth()->id(), 403, 'You are not authorized to view this blog.');
 
         return view('blogs.edit', compact('blog'));
     }
@@ -83,6 +84,7 @@ class BlogController extends Controller
         if (is_array($blog)) {
             return redirect()->route('blogs.index')->with(['error' => $blog['message']]);
         }
+        abort_if(! $blog, 404, 'The blog you are looking for could not be found.');
         abort_if($blog->userId !== auth()->id(), 403, 'You are not authorized to view this blog.');
 
         $result = $this->blogs->update($id, $request->validated());
@@ -100,6 +102,7 @@ class BlogController extends Controller
         if (is_array($blog)) {
             return redirect()->route('blogs.index')->with(['error' => $blog['message']]);
         }
+        abort_if(! $blog, 404, 'The blog you are looking for could not be found.');
         abort_if($blog->userId !== auth()->id(), 403, 'You are not authorized to view this blog.');
 
         $result = $this->blogs->delete($id);
