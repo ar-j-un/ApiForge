@@ -9,7 +9,7 @@ interface BlogServiceInterface
 {
     public function paginateForUser(int $userId, int $perPage = 15): LengthAwarePaginator|array;
 
-    public function find(string $id): Blog|array;
+    public function find(string $id): Blog|array|null;
 
     public function create(array $data, int $userId): Blog|array;
 
