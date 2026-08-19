@@ -35,7 +35,7 @@ class BlogController extends Controller
     {
         $result = $this->blogs->create($request->validated(), auth()->id());
 
-        if (is_array($result)) {
+        if ($result['success']) {
             return back()->withInput()->with(['error' => $result['message']]);
         }
 
@@ -47,32 +47,34 @@ class BlogController extends Controller
         $result = $this->blogs->search($request->validated('search_query'), auth()->id());
 
         return view('blogs.search', [
-            'blogs' => is_array($result) ? new LengthAwarePaginator([], 0, 15) : $result,
-            'searchError' => is_array($result) ? $result['message'] : null,
+            'blogs' => $result['success'] ? $result['data'] : new LengthAwarePaginator([], 0, 15),
+            'searchError' => $result['success'] ? null : $result['message'],
         ]);
     }
 
     public function show()
     {
-        $foreignBlogs = $this->blogs->foreignBlogs(auth()->id());
-        $foreignCountryCounts = $this->blogs->foreignCountryCounts();
+        $foreignBlogsResult = $this->blogs->foreignBlogs(auth()->id());
+        $foreignCountsResult = $this->blogs->foreignCountryCounts();
 
-        $blogsFailed = is_array($foreignBlogs);
-        $countsFailed = isset($foreignCountryCounts['_error']);
+        $error = ! $foreignBlogsResult['success'] ? $foreignBlogsResult['message']
+            : (! $foreignCountsResult['success'] ? $foreignCountsResult['message'] : null);
 
         return view('blogs.show', [
-            'foreignBlogs' => $blogsFailed ? new LengthAwarePaginator([], 0, 3) : $foreignBlogs,
-            'foreignCountryCounts' => $countsFailed ? [] : $foreignCountryCounts,
-            'searchError' => $error['message'] ?? null,
+            'foreignBlogs' => $foreignBlogsResult['success'] ? $foreignBlogsResult['data'] : new LengthAwarePaginator([], 0, 3),
+            'foreignCountryCounts' => $foreignCountsResult['success'] ? $foreignCountsResult['data'] : [],
+            'searchError' => $error,
         ]);
     }
 
     public function edit(string $id)
     {
-        $blog = $this->blogs->find($id);
-        if (is_array($blog)) {
-            return redirect()->route('blogs.index')->with(['error' => $blog['message']]);
+        $result = $this->blogs->find($id);
+
+        if (! $result['success']) {
+            return redirect()->route('blogs.index')->with(['error' => $result['message']]);
         }
+        $blog = $result['data'];
         abort_if(! $blog, 404, 'The blog you are looking for could not be found.');
         abort_if($blog->userId !== auth()->id(), 403, 'You are not authorized to view this blog.');
 
@@ -81,16 +83,19 @@ class BlogController extends Controller
 
     public function update(StoreBlogRequest $request, string $id)
     {
-        $blog = $this->blogs->find($id);
-        if (is_array($blog)) {
-            return redirect()->route('blogs.index')->with(['error' => $blog['message']]);
+        $blogResult = $this->blogs->find($id);
+
+        if (! $blogResult['success']) {
+            return redirect()->route('blogs.index')->with(['error' => $blogResult['message']]);
         }
+
+        $blog = $blogResult['data'];
         abort_if(! $blog, 404, 'The blog you are looking for could not be found.');
         abort_if($blog->userId !== auth()->id(), 403, 'You are not authorized to view this blog.');
 
         $result = $this->blogs->update($id, $request->validated());
 
-        if (is_array($result)) {
+        if (! $result['success']) {
             return back()->withInput()->with(['error' => $result['message']]);
         }
 
@@ -99,15 +104,19 @@ class BlogController extends Controller
 
     public function destroy(string $id)
     {
-        $blog = $this->blogs->find($id);
-        if (is_array($blog)) {
-            return redirect()->route('blogs.index')->with(['error' => $blog['message']]);
+        $blogResult = $this->blogs->find($id);
+
+        if (! $blogResult['success']) {
+            return redirect()->route('blogs.index')->with(['error' => $blogResult['message']]);
         }
+
+        $blog = $blogResult['data'];
         abort_if(! $blog, 404, 'The blog you are looking for could not be found.');
         abort_if($blog->userId !== auth()->id(), 403, 'You are not authorized to view this blog.');
 
         $result = $this->blogs->delete($id);
-        if (is_array($result)) {
+
+        if (! $result['success']) {
             return back()->with(['error' => $result['message']]);
         }
 
