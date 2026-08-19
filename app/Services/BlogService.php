@@ -24,16 +24,28 @@ final class BlogService implements BlogServiceInterface
         $this->elasticsearch->indices()->refresh(['index' => self::INDEX]);
     }
 
-    private function withExceptions(string $message, Throwable $err): array
+    private function success(mixed $data): array
     {
         return [
+            'success' => true,
+            'data' => $data,
+            'message' => null,
+            'detail' => null,
+        ];
+    }
+
+    private function failure(string $message, Throwable $err): array
+    {
+        return [
+            'success' => false,
+            'data' => null,
             'message' => $message,
             'detail' => $err->getMessage(),
         ];
     }
 
     #[\Override]
-    public function paginateForUser(int $userId, int $perPage = 3): LengthAwarePaginator|array
+    public function paginateForUser(int $userId, int $perPage = 3): array
     {
         $page = $this->resolvePage();
 
@@ -48,7 +60,7 @@ final class BlogService implements BlogServiceInterface
                 ],
             ]);
 
-            return $this->toPaginator($response, $perPage, $page);
+            return $this->success($this->toPaginator($response, $perPage, $page));
         } catch (Throwable $err) {
             Log::error('Failed to paginate blogs from Elasticsearch', [
                 'user_id' => $userId,
@@ -56,7 +68,7 @@ final class BlogService implements BlogServiceInterface
                 'exception' => $err->getMessage(),
             ]);
 
-            return $this->withExceptions("We couldn't load your blogs right now. Please try again shortly.", $err);
+            return $this->failure("We couldn't load your blogs right now. Please try again shortly.", $err);
         }
     }
 
