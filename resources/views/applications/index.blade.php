@@ -26,6 +26,7 @@
                     <th>Forwarding Address</th>
                     <th>Domain</th>
                     <th>Created</th>
+                    <th>Action</th>
                 </tr>
             </thead>
         </table>
@@ -36,7 +37,7 @@
 @push('scripts')
 <script>
     $(document).ready(function () {
-        $('#applications-table').DataTable({
+        const table = $('#applications-table').DataTable({
             processing: true,
             serverSide: true,
             ajax: '{{ route('applications.index') }}',
@@ -47,7 +48,36 @@
                 { data: 'forwarding_address', name: 'forwarding_address' },
                 { data: 'domain', name: 'domain' },
                 { data: 'created_at', name: 'created_at' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ],
+        });
+        $('table').on('click', '.delete-application', function () {
+
+            const applicationId = $(this).data('id');
+
+            if (!applicationId) {
+                return;
+            }
+            if (!confirm('Are you sure you want to delete?')) {
+                return;
+            }
+
+            $.ajax({
+                url: `{{ url('applications') }}/${applicationId}`,
+                method: 'DELETE',
+                data: {
+                    _token: '{{ csrf_token() }}'
+                },
+                success: function (response) {
+
+                    table.ajax.reload(null, false);
+
+                },
+                error: function () {
+                    alert('Something went wrong!');
+                }
+            });
+
         });
     });
 </script>
