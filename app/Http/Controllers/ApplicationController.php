@@ -12,7 +12,6 @@ use Yajra\DataTables\Facades\DataTables;
 
 class ApplicationController extends Controller
 {
-
     public function index(Request $request): View|JsonResponse
     {
         if ($request->ajax()) {
@@ -22,7 +21,11 @@ class ApplicationController extends Controller
 
             return DataTables::of($applications)
                 ->editColumn('created_at', fn (Application $application) => $application->created_at->format('d M Y, h:i A'))
-                ->toJson();
+                ->addColumn('action', function (Application $application) {
+                    return '<button data-id="'.$application->id.'" class="btn btn-danger btn-sm delete-application">Delete</button>';
+                })
+                ->rawColumns(['action'])
+                ->make(true);
         }
 
         return view('applications.index');
@@ -59,8 +62,15 @@ class ApplicationController extends Controller
         //
     }
 
-    public function destroy(Application $application)
+    public function destroy($id)
     {
-        //
+        $application = Application::findOrFail($id);
+        if ($application) {
+            $application->delete();
+
+            return response()->json(['status' => 'success', 'message' => 'User Deleted Successfully!']);
+        }
+
+        return response()->json(['status' => 'failed', 'message' => 'Unable to delete user!']);
     }
 }
