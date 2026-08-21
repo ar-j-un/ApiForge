@@ -15,7 +15,7 @@ Route::middleware('auth')->group(function () {
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
         ->name('logout');
     Route::resource('applications', ApplicationController::class)
-        ->only(['index', 'create', 'store', 'destroy']);
+        ->only(['index', 'create', 'store', 'destroy', 'edit', 'update', 'show']);
 });
 
 Route::get('/', function () {
