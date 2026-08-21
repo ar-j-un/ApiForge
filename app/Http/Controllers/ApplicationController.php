@@ -47,19 +47,25 @@ class ApplicationController extends Controller
 
     }
 
-    public function show(Application $application)
+    public function show()
     {
-        //
+        $applications = auth()->user()->applications()->paginate(10);
+
+        return view('applications.show', compact('applications'));
     }
 
     public function edit(Application $application)
     {
-        //
+        return view('applications.edit', ['application' => $application]);
     }
 
-    public function update(Request $request, Application $application)
+    public function update(StoreApplicationRequest $request, Application $application)
     {
-        //
+        $application->update($request->validated());
+
+        return redirect()
+            ->route('applications.show')
+            ->with('success', 'Application updated successfully.');
     }
 
     public function destroy($id)
