@@ -17,6 +17,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('applications', ApplicationController::class)
         ->only(['index', 'create', 'store', 'destroy', 'edit', 'update', 'show']);
 });
+Route::patch('/applications/{application}/quick-update', [ApplicationController::class, 'quickUpdate'])
+    ->name('applications.quick-update');
 
 Route::get('/', function () {
     return view('welcome');
