@@ -79,4 +79,31 @@ class ApplicationController extends Controller
 
         return response()->json(['status' => 'failed', 'message' => 'Unable to delete user!']);
     }
+
+    public function quickUpdate(Request $request, Application $application): JsonResponse
+    {
+        abort_unless($application->user_id === auth()->id(), 403);
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'domain' => [
+                'required',
+                'string',
+                'max:255',
+                'regex:/^(?!-)[A-Za-z0-9-]{1,63}(?<!-)(\.[A-Za-z0-9-]{1,63}(?<!-))*\.[A-Za-z]{2,}$/',
+            ],
+        ]);
+
+        $application->update($validated);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => $application->id,
+                'name' => $application->name,
+                'domain' => $application->domain,
+            ],
+            'message' => 'Application updated successfully.',
+        ]);
+    }
 }
