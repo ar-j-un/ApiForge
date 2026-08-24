@@ -14,8 +14,11 @@
     </div>
     <div class="card-body">
         @if (session('status'))
-            <div class="alert alert-success">{{ session('status') }}</div>
+            <div class="alert alert-success alert-dismissible fade show">{{ session('status') }}
+                <button type="button" class="btn-close" data-coreui-dismiss="alert" aria-label="Close"></button>
+            </div>
         @endif
+        <div id="application-alert"></div>
 
         <table id="applications-table" class="table table-hover w-100">
             <thead>
@@ -35,40 +38,33 @@
 
 <div class="modal fade" id="deleteApplicationModal" tabindex="-1"
     aria-labelledby="deleteApplicationModalLabel" aria-hidden="true">
-
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-
             <div class="modal-header">
                 <h5 class="modal-title" id="deleteApplicationModalLabel">
                     Confirm Deletion
                 </h5>
-
                 <button type="button"
                     class="btn-close"
                     data-coreui-dismiss="modal"
                     aria-label="Close">
                 </button>
             </div>
-
             <div class="modal-body">
                 Are you sure you want to delete this application?
             </div>
-
             <div class="modal-footer">
                 <button type="button"
                     class="btn btn-secondary"
                     data-coreui-dismiss="modal">
                     Cancel
                 </button>
-
                 <button type="button"
                     class="btn btn-danger"
                     id="confirm-delete-application">
                     Delete
                 </button>
             </div>
-
         </div>
     </div>
 </div>
@@ -92,9 +88,7 @@ $(document).ready(function () {
             { data: 'action', name: 'action', orderable: false, searchable: false },
         ],
     });
-
     let applicationId = null;
-
     const deleteModal = new coreui.Modal(
         document.getElementById('deleteApplicationModal')
     );
@@ -106,7 +100,6 @@ $(document).ready(function () {
         if (!applicationId) {
             return;
         }
-
         deleteModal.show();
     });
 
@@ -115,7 +108,6 @@ $(document).ready(function () {
         if (!applicationId) {
             return;
         }
-
         $.ajax({
             url: `{{ url('applications') }}/${applicationId}`,
             method: 'DELETE',
@@ -124,20 +116,23 @@ $(document).ready(function () {
             },
 
             success: function (response) {
-
                 deleteModal.hide();
-
                 table.ajax.reload(null, false);
-
                 applicationId = null;
             },
 
             error: function () {
-
                 deleteModal.hide();
-
-                alert('Something went wrong!');
-
+                $('#application-alert').html(`
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        Something went wrong while deleting the application.
+                        <button type="button"
+                            class="btn-close"
+                            data-coreui-dismiss="alert"
+                            aria-label="Close">
+                        </button>
+                    </div>
+                `);
                 applicationId = null;
             }
         });
