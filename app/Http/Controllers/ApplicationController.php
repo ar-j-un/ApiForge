@@ -61,6 +61,8 @@ class ApplicationController extends Controller
 
     public function update(StoreApplicationRequest $request, Application $application)
     {
+        abort_unless($application->user_id === auth()->id(), 403);
+
         $application->update($request->validated());
 
         return redirect()
@@ -71,7 +73,7 @@ class ApplicationController extends Controller
     public function destroy($id)
     {
         $application = Application::findOrFail($id);
-        if ($application) {
+        if ($application->user_id === auth()->id()) {
             $application->delete();
 
             return response()->json(['status' => 'success', 'message' => 'User Deleted Successfully!']);
