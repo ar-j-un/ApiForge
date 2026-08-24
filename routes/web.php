@@ -1,9 +1,8 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\ApplicationController;
-
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
@@ -16,10 +15,10 @@ Route::middleware('auth')->group(function () {
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
         ->name('logout');
     Route::resource('applications', ApplicationController::class)
-        ->only(['index', 'create', 'store']);
+        ->only(['index', 'create', 'store', 'destroy', 'edit', 'update', 'show']);
 });
-
-
+Route::patch('/applications/{application}/quick-update', [ApplicationController::class, 'quickUpdate'])
+    ->name('applications.quick-update');
 
 Route::get('/', function () {
     return view('welcome');
