@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\ApplicationController;
+use App\Http\Controllers\PostController;
 
 
 Route::middleware('guest')->group(function () {
@@ -19,6 +20,9 @@ Route::middleware('auth')->group(function () {
         ->only(['index', 'create', 'store']);
 });
 
+Route::middleware('auth')->group(function () {
+    Route::resource('posts', PostController::class)->except(['show']);
+});
 
 
 Route::get('/', function () {
